@@ -30,7 +30,9 @@ const btnS = document.querySelector("#S");
 // let faceMesh, maskPath, maskTexture, count;
 // count = 1;
 
-let session, sessionActive, webXrSupported, renderer, camera, scene, XR,size;
+let session, sessionActive, webXrSupported;
+let renderer, camera, scene, XR, size;
+let controller, controllerPos;
 sessionActive = webXrSupported = false;
 size = 0.05;
 
@@ -55,11 +57,11 @@ async function setupScene() {
   camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
   camera.position.set(0, 0, 0.5);
 
-  const geometry = new THREE.BoxGeometry(size,size,size);
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  cube.position.set(0, 0, -0.5);
-  scene.add(cube);
+  // const geometry = new THREE.BoxGeometry(size, size, size);
+  // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  // const cube = new THREE.Mesh(geometry, material);
+  // cube.position.set(0, 0, -0.5);
+  // scene.add(cube);
 
   const light = new THREE.HemisphereLight(0xffffff, 10);
   scene.add(light);
@@ -81,6 +83,19 @@ async function startSession() {
 
   await XR.setReferenceSpaceType("local");
   await XR.setSession(session);
+
+  controller = XR.getController(0);
+  scene.add(controller);
+
+  controller.addEventListener("select", () => {
+    console.log("Select");
+    const geometry = new THREE.BoxGeometry(size, size, size);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffffff * Math.random() });
+    const cube = new THREE.Mesh(geometry, material);
+    // cube.position.set(0, 0, -0.5);
+    cube.position.copy(controller.position);
+    scene.add(cube);
+  });
 
   renderer.setAnimationLoop(() => {
     renderer.render(scene, camera);
