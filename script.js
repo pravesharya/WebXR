@@ -6,15 +6,13 @@ let height = window.innerHeight;
 
 const canvas = document.querySelector("#canvas");
 const btnS = document.querySelector("#S");
-// const btnF = document.querySelector("#F");
-// const btnC = document.querySelector("#C");
-// const filters = document.querySelector("#filters");
-// const btnF0 = document.querySelector("#f0");
-// const btnF1 = document.querySelector("#f1");
-// const btnF2 = document.querySelector("#f2");
-// const btnF3 = document.querySelector("#f3");
-// const btnF4 = document.querySelector("#f4");
-// const formDiv = document.querySelector("#formDiv");
+
+const btnM = document.querySelector("#M");
+const mList = document.querySelector("#meshesList");
+const btnM0 = document.querySelector("#m0");
+const btnM1 = document.querySelector("#m1");
+const btnM2 = document.querySelector("#m2");
+const formDiv = document.querySelector("#formDiv");
 
 // const gltfLoader = new GLTFLoader();
 // const textureLoader = new THREE.TextureLoader();
@@ -30,14 +28,18 @@ const btnS = document.querySelector("#S");
 // let faceMesh, maskPath, maskTexture, count;
 // count = 1;
 
-let session, sessionActive, webXrSupported;
-let renderer, camera, scene, XR, size;
-let controller, controllerPos;
-sessionActive = webXrSupported = false;
-size = 0.05;
+let webXrSupported, session, sessionActive;
+let renderer, camera, scene, XR;
+let size, geometry, material, mesh, mesheListVisible;
+let controller;
+
+sessionActive = webXrSupported = mesheListVisible = false;
+size = 0.025;
 
 async function setupScene() {
-  console.log(navigator.xr, navigator.xr.isSessionSupported);
+  console.log("ENTERED setupScene");
+
+  // console.log(navigator.xr, navigator.xr.isSessionSupported);
   webXrSupported =
     navigator.xr && (await navigator.xr.isSessionSupported("immersive-ar"));
   if (!webXrSupported) {
@@ -52,16 +54,11 @@ async function setupScene() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.xr.enabled = true;
   XR = renderer.xr;
+  console.log("renderer success");
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
   camera.position.set(0, 0, 0.5);
-
-  // const geometry = new THREE.BoxGeometry(size, size, size);
-  // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  // const cube = new THREE.Mesh(geometry, material);
-  // cube.position.set(0, 0, -0.5);
-  // scene.add(cube);
 
   const light = new THREE.HemisphereLight(0xffffff, 10);
   scene.add(light);
@@ -70,15 +67,17 @@ async function setupScene() {
   directionalLight.position.set(0, 0.5, 0.5).normalize();
   scene.add(directionalLight);
 
-  console.log(scene);
+  console.log("scene success");
 }
 setupScene();
 
 async function startSession() {
+  console.log("ENTERED startSession");
+
   sessionActive = true;
   session = await navigator.xr.requestSession("immersive-ar", {
     optionalFeatures: ["dom-overlay"],
-    domOverlay: { root: document.querySelector("#controls") },
+    domOverlay: { root: document.body },
   });
 
   await XR.setReferenceSpaceType("local");
@@ -87,14 +86,13 @@ async function startSession() {
   controller = XR.getController(0);
   scene.add(controller);
 
+  geometry = new THREE.BoxGeometry(size, size, size);
   controller.addEventListener("select", () => {
     console.log("Select");
-    const geometry = new THREE.BoxGeometry(size, size, size);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff * Math.random() });
-    const cube = new THREE.Mesh(geometry, material);
-    // cube.position.set(0, 0, -0.5);
-    cube.position.copy(controller.position);
-    scene.add(cube);
+    material = new THREE.MeshBasicMaterial({ color: 0xffffff * Math.random() });
+    mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(controller.position);
+    scene.add(mesh);
   });
 
   renderer.setAnimationLoop(() => {
@@ -103,6 +101,8 @@ async function startSession() {
 }
 
 async function endSession() {
+  console.log("ENTERED endSession");
+
   session.end();
   renderer.clear();
   renderer.setAnimationLoop(null);
@@ -110,6 +110,8 @@ async function endSession() {
 }
 
 btnS.addEventListener("click", () => {
+  console.log("ENTERED btnS");
+
   if (sessionActive) {
     btnS.textContent = "START";
     endSession();
@@ -117,4 +119,33 @@ btnS.addEventListener("click", () => {
     btnS.textContent = "END";
     startSession();
   }
+});
+
+btnM.addEventListener("click", () => {
+  console.log("ENTERED btnM");
+
+  if (mesheListVisible) {
+    mList.style.top = "-100vh";
+    // if(formExist){
+    //   formDiv.removeChild(form);
+    //   formDiv.style.display = "none";
+    //   formExist = false;
+    // }
+  } else {
+    mList.style.top = "10vh";
+  }
+  mesheListVisible = !mesheListVisible;
+});
+
+btnM0.addEventListener("click", () => {
+  console.log("Cube");
+  geometry = new THREE.BoxGeometry(size, size, size);
+});
+btnM1.addEventListener("click", () => {
+  console.log("Sphere");
+  geometry = new THREE.SphereGeometry(size);
+});
+btnM2.addEventListener("click", () => {
+  console.log("Cone");
+  geometry = new THREE.ConeGeometry(size, size);
 });
