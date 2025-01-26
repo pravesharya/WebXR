@@ -6,7 +6,6 @@ let height = window.innerHeight;
 
 const canvas = document.querySelector("#canvas");
 const btnS = document.querySelector("#S");
-
 const btnM = document.querySelector("#M");
 const mList = document.querySelector("#meshesList");
 const btnM0 = document.querySelector("#m0");
@@ -102,7 +101,6 @@ async function startSession() {
 
 async function endSession() {
   console.log("ENTERED endSession");
-
   session.end();
   renderer.clear();
   renderer.setAnimationLoop(null);
@@ -114,9 +112,13 @@ btnS.addEventListener("click", () => {
 
   if (sessionActive) {
     btnS.textContent = "START";
+    btnM.style.display = "none";
+    mList.style.right = "-100px";
+    mesheListVisible = false;
     endSession();
   } else {
     btnS.textContent = "END";
+    btnM.style.display = "block";
     startSession();
   }
 });
@@ -125,14 +127,16 @@ btnM.addEventListener("click", () => {
   console.log("ENTERED btnM");
 
   if (mesheListVisible) {
-    mList.style.top = "-100vh";
+    mList.style.right = "-100px";
+    // mList.style.top = "-100vh";
     // if(formExist){
     //   formDiv.removeChild(form);
     //   formDiv.style.display = "none";
     //   formExist = false;
     // }
   } else {
-    mList.style.top = "10vh";
+    // mList.style.top = "10vh";
+    mList.style.right = "8px";
   }
   mesheListVisible = !mesheListVisible;
 });
@@ -147,5 +151,5 @@ btnM1.addEventListener("click", () => {
 });
 btnM2.addEventListener("click", () => {
   console.log("Cone");
-  geometry = new THREE.ConeGeometry(size, size);
+  geometry = new THREE.ConeGeometry(size, size * 2);
 });

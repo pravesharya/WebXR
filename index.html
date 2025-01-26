@@ -19,6 +19,7 @@
         height: 100vh;
         margin: 0;
         overflow: hidden;
+        user-select: none;
       }
       .CC {
         display: flex;
@@ -48,9 +49,12 @@
         font-size: 16px;
       }
       #meshesList {
-        max-width: 80vw;
+        width: 40px;
+        flex-direction: column;
+        /* max-width: 80vw; */
         position: absolute;
-        top: -100vh;
+        /* top: -100vh; */
+        right: -100px;
         padding: 10px;
         border-radius: 4px;
         background-color: rgba(0, 0, 0, 0.5);
@@ -83,6 +87,9 @@
         z-index: 999;
         display: none;
       }
+      #M{
+        display:none;
+      }
     </style>
   </head>
 
@@ -91,9 +98,9 @@
 
     <div id="controls" class="CC">
       <button class="control CC" id="S">START</button>
-      <button class="control CC" id="M">MESHES</button>
+      <button class="control CC" id="M">SHAPE</button>
     </div>
-    
+
     <div id="meshesList" class="CC">
       <div id="m0" class="mesh CC">
         <img src="./assets/cube.png" />
