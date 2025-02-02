@@ -9,7 +9,8 @@
         "imports": {
           "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
           "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/",
-          "GLTFLoader": "https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js"
+          "GLTFLoader": "https://unpkg.com/three@0.161.0/examples/jsm/loaders/GLTFLoader.js",
+          "CSS3DRenderer": "https://unpkg.com/three@0.161.0/examples/jsm/renderers/CSS3DRenderer.js"
         }
       }
     </script>
@@ -87,7 +88,7 @@
         z-index: 999;
         display: none;
       }
-      #M{
+      #meshes{
         display:none;
       }
     </style>
@@ -97,8 +98,8 @@
     <canvas id="canvas"></canvas>
 
     <div id="controls" class="CC">
-      <button class="control CC" id="S">START</button>
-      <button class="control CC" id="M">SHAPE</button>
+      <button class="control CC" id="session">START</button>
+      <button class="control CC" id="meshes">SHAPE</button>
     </div>
 
     <div id="meshesList" class="CC">
@@ -111,8 +112,14 @@
       <div id="m2" class="mesh CC">
         <img src="./assets/cone.jpg" />
       </div>
+      <div id="m3" class="mesh CC">
+        <img src="./assets/duck.png" />
+      </div>
+      <div id="m4" class="mesh CC">
+        <img src="./assets/lock.png" />
+      </div>
     </div>
-    <!-- <div id="formDiv" class="CC"></div> -->
+    <div id="formDiv" class="CC"></div>
 
     <script src="script.js" type="module"></script>
   </body>
