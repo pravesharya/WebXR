@@ -164,7 +164,7 @@ async function setModel(count) {
       break;
     case 1:
       modelPath = "./assets/woman/beautiful_01.glb";
-      modelSize = 0.09;
+      modelSize = 0.5;
       break;
     default:
       modelPath = "./assets/duck/scene.gltf";
