@@ -9,30 +9,30 @@ let height = window.innerHeight;
 const canvas = document.querySelector("#canvas");
 const btnS = document.querySelector("#session");
 const btnM = document.querySelector("#meshes");
+const btnC = document.querySelector("#clear");
 const mList = document.querySelector("#meshesList");
 const btnM0 = document.querySelector("#m0");
 const btnM1 = document.querySelector("#m1");
 const btnM2 = document.querySelector("#m2");
 const btnM3 = document.querySelector("#m3");
 const btnM4 = document.querySelector("#m4");
+const btnM5 = document.querySelector("#m5");
 const formDiv = document.querySelector("#formDiv");
+// const form = document.querySelector("#form");
+// const input = document.querySelector("#pinInput");
+// const close = document.querySelector("#pinClose");
 
 let webXrSupported, session, sessionActive;
 let renderer, camera, scene, XR;
 let size, geometry, material, mesh, mesheListVisible;
 let gltfLoader, modelPath, model, modelSize, modelAnims, isModel;
-let controller, form, formExist, pinCorrect;
+let controller, pinCorrect;
+let formExist, form, input, actions, submit, close;
 
 gltfLoader = new GLTFLoader();
-modelPath = "./assets/duck/scene.gltf";
 
-sessionActive =
-  webXrSupported =
-  mesheListVisible =
-  isModel =
-  formExist =
-  pinCorrect =
-    false;
+sessionActive = webXrSupported = isModel = false;
+mesheListVisible = formExist = pinCorrect = false;
 size = modelSize = 0.025;
 
 async function setupScene() {
@@ -79,11 +79,27 @@ async function startSession() {
   controller = XR.getController(0);
   scene.add(controller);
 
-  geometry = new THREE.BoxGeometry(size, size, size);
-  controller.addEventListener("select", () => {
+  modelPath = "./assets/duck/scene.gltf"; // default Model
+  geometry = new THREE.BoxGeometry(size, size, size); // default Shape
+
+  controller.addEventListener("select", async () => {
     if (isModel) {
+      const gltf = await new Promise((resolve) => {
+        gltfLoader.load(modelPath, (gltf) => {
+          resolve(gltf);
+        });
+      });
+      model = gltf.scene;
+      model.scale.set(modelSize, modelSize, modelSize);
+      model.castShadow = true;
       model.position.copy(controller.position);
       scene.add(model);
+
+      // modelAnims = gltf.animations;
+      // console.log("Animation : " + modelAnims);
+      // const mixer = new THREE.AnimationMixer(model);
+      // const action = mixer.clipAction(modelAnims[0]);
+      // action.play();
     } else {
       material = new THREE.MeshBasicMaterial({
         color: 0xffffff * Math.random(),
@@ -101,7 +117,7 @@ async function startSession() {
   console.log("Session STARTED");
 }
 
-async function endSession() {
+function endSession() {
   session.end();
   renderer.clear();
   renderer.setAnimationLoop(null);
@@ -110,6 +126,8 @@ async function endSession() {
 }
 
 btnS.addEventListener("click", () => {
+  console.log("Session");
+
   if (sessionActive) {
     btnS.textContent = "START";
     btnM.style.display = "none";
@@ -118,8 +136,17 @@ btnS.addEventListener("click", () => {
     endSession();
   } else {
     btnS.textContent = "END";
+    btnC.style.display = "block";
     btnM.style.display = "block";
     startSession();
+  }
+});
+
+btnC.addEventListener("click", () => {
+  console.log("Clear Scene");
+
+  while (scene.children.length > 0) {
+    scene.remove(scene.children[0]);
   }
 });
 
@@ -155,85 +182,54 @@ btnM2.addEventListener("click", () => {
   geometry = new THREE.ConeGeometry(size, size * 2);
 });
 
-async function setModel(count) {
-  isModel = true;
-  switch (count) {
-    case 0:
-      modelPath = "./assets/duck/scene.gltf";
-      modelSize = 0.05;
-      break;
-    case 1:
-      modelPath = "./assets/woman/beautiful_01.glb";
-      modelSize = 0.25;
-      break;
-    default:
-      modelPath = "./assets/duck/scene.gltf";
-      modelSize = 0.05;
-      break;
-  }
-
-  const gltf = await new Promise((resolve) => {
-    gltfLoader.load(modelPath, (gltf) => {
-      resolve(gltf); // Resolve with entire gltf object, not just scene
-    });
-  });
-  model = gltf.scene;
-  console.log("model :" + model);
-  
-  model.scale.set(modelSize, modelSize, modelSize);
-  model.castShadow = true;
-  
-  // modelAnims = gltf.animations;
-  // console.log("Animation : " + modelAnims);
-  // const mixer = new THREE.AnimationMixer(model);
-  // const action = mixer.clipAction(modelAnims[0]);
-  // action.play();
-}
-
-btnM3.addEventListener("click", async () => {
+btnM3.addEventListener("click", () => {
   console.log("Duck");
-  setModel(0);
+  isModel = true;
+  // modelPath = "./assets/duck/scene.gltf";
+  modelSize = 0.05;
 });
 
-btnM4.addEventListener("click", async () => {
-  console.log("CHK");
+btnM4.addEventListener("click", () => {
+  console.log("CHK 1");
   checkPin(6969, 1);
+});
+
+btnM5.addEventListener("click", () => {
+  console.log("CHK 2");
+  checkPin(6969, 2);
 });
 
 function checkPin(pin, count) {
   formExist = true;
   form = document.createElement("form");
-  form.style.display = "flex";
-  form.style.flexDirection = "column";
+  form.classList.add("CC", "form");
 
-  const input = document.createElement("input");
+  input = document.createElement("input");
   input.type = "text";
   input.maxLength = 4;
   input.pattern = "\\d{4}";
   input.placeholder = "Enter 4 digit code";
+  input.classList.add("pin");
 
-  const submit = document.createElement("button");
+  submit = document.createElement("button");
   submit.type = "submit";
   submit.textContent = "SUBMIT";
+  submit.classList.add("pin");
 
-  const close = document.createElement("button");
-  close.textContent = "[x]";
+  close = document.createElement("button");
+  close.textContent = "X";
+  close.classList.add("pin", "pinClose");
+
+  actions = document.createElement("div");
+  actions.appendChild(submit);
+  actions.appendChild(close);
+  actions.classList.add("pin", "CC");
 
   form.appendChild(input);
-  form.appendChild(submit);
-  form.appendChild(close);
+  form.appendChild(actions);
+
   formDiv.appendChild(form);
   formDiv.style.display = "block";
-
-  input.style.backgroundColor = "white";
-  submit.style.backgroundColor = "white";
-  close.style.backgroundColor = "black";
-  input.style.color = "black";
-  submit.style.color = "black";
-  close.style.color = "white";
-  input.style.border = "1px black solid";
-  submit.style.border = "1px black solid";
-  close.style.border = "none";
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -255,4 +251,12 @@ function checkPin(pin, count) {
     formDiv.style.display = "none";
     formExist = false;
   });
+}
+
+async function setModel(count) {
+  isModel = true;
+  modelSize = 0.25;
+
+  if (count == 1) modelPath = "./assets/woman/beautiful_01.glb";
+  else modelPath = "./assets/woman/beautiful_02.glb";
 }

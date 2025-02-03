@@ -88,8 +88,33 @@
         z-index: 999;
         display: none;
       }
-      #meshes{
-        display:none;
+
+      .form {
+        width: 200px;
+        display: grid;
+        grid-template-columns: 1fr; /* Single column layout */
+        gap: 2px; /* Spacing between elements */
+      }
+      .pin {
+        padding: 0;
+        width: 100%;
+        height: 24px;
+        background-color: white;
+        color: #000;
+        font-size: 16px;
+        text-align: center;
+        border: 0;
+      }
+      .pinClose {
+        width: 32px;
+        background-color: rgb(199, 0, 0);
+        color: white;
+        border: "1px white solid";
+      }
+
+      #clear,
+      #meshes {
+        display: none;
       }
     </style>
   </head>
@@ -100,6 +125,7 @@
     <div id="controls" class="CC">
       <button class="control CC" id="session">START</button>
       <button class="control CC" id="meshes">SHAPE</button>
+      <button class="control CC" id="clear">CLEAR</button>
     </div>
 
     <div id="meshesList" class="CC">
@@ -118,7 +144,11 @@
       <div id="m4" class="mesh CC">
         <img src="./assets/lock.png" />
       </div>
+      <div id="m5" class="mesh CC">
+        <img src="./assets/lock.png" />
+      </div>
     </div>
+
     <div id="formDiv" class="CC"></div>
 
     <script src="script.js" type="module"></script>
