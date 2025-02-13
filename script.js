@@ -18,22 +18,19 @@ const btnM3 = document.querySelector("#m3");
 const btnM4 = document.querySelector("#m4");
 const btnM5 = document.querySelector("#m5");
 const formDiv = document.querySelector("#formDiv");
-// const form = document.querySelector("#form");
-// const input = document.querySelector("#pinInput");
-// const close = document.querySelector("#pinClose");
 
 let webXrSupported, session, sessionActive;
 let renderer, camera, scene, XR;
 let size, geometry, material, mesh, mesheListVisible;
 let gltfLoader, modelPath, model, modelSize, modelAnims, isModel;
-let controller, pinCorrect;
-let formExist, form, input, actions, submit, close;
-
-gltfLoader = new GLTFLoader();
+let controller, reticle, hitTestSource;
+let pinCorrect, formExist, form, input, actions, submit, close;
 
 sessionActive = webXrSupported = isModel = false;
 mesheListVisible = formExist = pinCorrect = false;
 size = modelSize = 0.025;
+
+gltfLoader = new GLTFLoader();
 
 async function setupScene() {
   webXrSupported =
@@ -68,53 +65,88 @@ setupScene();
 
 async function startSession() {
   sessionActive = true;
+
   session = await navigator.xr.requestSession("immersive-ar", {
     optionalFeatures: ["dom-overlay"],
+    requiredFeatures: ["hit-test"],
     domOverlay: { root: document.body },
   });
 
   await XR.setReferenceSpaceType("local");
   await XR.setSession(session);
 
-  controller = XR.getController(0);
-  scene.add(controller);
+  const referenceSpace = await session.requestReferenceSpace("local");
+  const viewerSpace = await session.requestReferenceSpace("viewer");
+  hitTestSource = await session.requestHitTestSource({
+    space: viewerSpace,
+  });
 
   modelPath = "./assets/duck/scene.gltf"; // default Model
   geometry = new THREE.BoxGeometry(size, size, size); // default Shape
 
-  controller.addEventListener("select", async () => {
+  console.log("Session STARTED");
+
+  controller = XR.getController(0);
+  scene.add(controller);
+
+  reticle = new THREE.Mesh(
+    new THREE.RingGeometry(0.15, 0.2, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffffff })
+  );
+  reticle.rotation.x = -Math.PI / 2;
+  reticle.visible = reticle.matrixAutoUpdate = false;
+  scene.add(reticle);
+
+  renderer.setAnimationLoop((timestamp, frame) => {
+    if (!frame) return;
+
     if (isModel) {
-      const gltf = await new Promise((resolve) => {
-        gltfLoader.load(modelPath, (gltf) => {
-          resolve(gltf);
-        });
-      });
-      model = gltf.scene;
-      model.scale.set(modelSize, modelSize, modelSize);
-      model.castShadow = true;
-      model.position.copy(controller.position);
-      scene.add(model);
-
-      // modelAnims = gltf.animations;
-      // console.log("Animation : " + modelAnims);
-      // const mixer = new THREE.AnimationMixer(model);
-      // const action = mixer.clipAction(modelAnims[0]);
-      // action.play();
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
+      if (hitTestResults.length > 0) {
+        const hit = hitTestResults[0];
+        const hitPose = hit.getPose(referenceSpace);
+        reticle.visible = true;
+        reticle.matrix.fromArray(hitPose.transform.matrix);
+        console.log("place Model");
+      }
     } else {
-      material = new THREE.MeshBasicMaterial({
-        color: 0xffffff * Math.random(),
-      });
-      mesh = new THREE.Mesh(geometry, material);
-      mesh.position.copy(controller.position);
-      scene.add(mesh);
+      reticle.visible = false;
+      console.log("place Shape");
     }
-  });
 
-  renderer.setAnimationLoop(() => {
+    controller.addEventListener("select", async () => {
+      if (isModel) {
+        console.log("placing Model : START");
+        
+        const gltf = await gltfLoader.loadAsync(modelPath);
+        model = gltf.scene;
+        model.scale.set(modelSize, modelSize, modelSize);
+        model.castShadow = true;
+        scene.add(model);
+
+        console.log("placing Model : END");
+        
+        // modelAnims = gltf.animations;
+        // console.log("Animation : " + modelAnims);
+        // const mixer = new THREE.AnimationMixer(model);
+        // const action = mixer.clipAction(modelAnims[0]);
+        // action.play();
+      } else {
+        console.log("placing Shape : START");
+
+        material = new THREE.MeshBasicMaterial({
+          color: 0xffffff * Math.random(),
+        });
+        mesh = new THREE.Mesh(geometry, material);
+        mesh.position.copy(controller.position);
+        scene.add(mesh);
+
+        console.log("placing Shape : END");
+      }
+    });
+
     renderer.render(scene, camera);
   });
-
-  console.log("Session STARTED");
 }
 
 function endSession() {
@@ -185,7 +217,6 @@ btnM2.addEventListener("click", () => {
 btnM3.addEventListener("click", () => {
   console.log("Duck");
   isModel = true;
-  // modelPath = "./assets/duck/scene.gltf";
   modelSize = 0.05;
 });
 
@@ -239,7 +270,10 @@ function checkPin(pin, count) {
       formDiv.removeChild(form);
       formDiv.style.display = "none";
       formExist = false;
-      setModel(count);
+
+      isModel = true;
+      modelSize = 0.25;
+      modelPath = `./assets/woman/beautiful_0${count}.glb`;
     } else {
       input.value = "";
       alert("Incorrect PIN ! Try again...");
@@ -251,12 +285,4 @@ function checkPin(pin, count) {
     formDiv.style.display = "none";
     formExist = false;
   });
-}
-
-async function setModel(count) {
-  isModel = true;
-  modelSize = 0.25;
-
-  if (count == 1) modelPath = "./assets/woman/beautiful_01.glb";
-  else modelPath = "./assets/woman/beautiful_02.glb";
 }
