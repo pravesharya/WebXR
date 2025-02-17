@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "GLTFLoader";
+import { OrbitControls } from 'OrbitControls';
 // import { CSS3DRenderer } from "CSS3DRenderer";
 // console.log(CSS3DRenderer);
 
@@ -22,15 +23,38 @@ const formDiv = document.querySelector("#formDiv");
 let webXrSupported, session, sessionActive;
 let renderer, camera, scene, XR;
 let size, geometry, material, mesh, mesheListVisible;
-let gltfLoader, modelPath, model, modelSize, modelAnims, isModel;
-let controller, reticle, hitTestSource;
+let gltfLoader, modelPath, model, modelSize, modelAnims;
+let controller, isModel, modelReady;
 let pinCorrect, formExist, form, input, actions, submit, close;
 
 sessionActive = webXrSupported = isModel = false;
 mesheListVisible = formExist = pinCorrect = false;
-size = modelSize = 0.025;
+size = modelSize = 0.0025;
 
 gltfLoader = new GLTFLoader();
+modelPath = "./assets/duck/scene.gltf"; // default Model
+isModel = modelReady = false;
+
+async function loadModel() {
+  try {
+    const gltf = await gltfLoader.loadAsync(modelPath);
+    model = gltf.scene;
+    model.scale.set(modelSize, modelSize, modelSize);
+    model.castShadow = true;
+    modelReady = true;
+    console.log("Model loaded successfully");
+    model.lookAt(camera.position);
+
+    // modelAnims = gltf.animations;
+    // console.log("Animation : " + modelAnims);
+    // const mixer = new THREE.AnimationMixer(model);
+    // const action = mixer.clipAction(modelAnims[0]);
+    // action.play();
+  } catch (error) {
+    console.error("Error loading model:", error);
+    // Handle the error appropriately, e.g., display an error message
+  }
+}
 
 async function setupScene() {
   webXrSupported =
@@ -68,83 +92,48 @@ async function startSession() {
 
   session = await navigator.xr.requestSession("immersive-ar", {
     optionalFeatures: ["dom-overlay"],
-    requiredFeatures: ["hit-test"],
     domOverlay: { root: document.body },
   });
 
   await XR.setReferenceSpaceType("local");
   await XR.setSession(session);
 
-  const referenceSpace = await session.requestReferenceSpace("local");
-  const viewerSpace = await session.requestReferenceSpace("viewer");
-  hitTestSource = await session.requestHitTestSource({
-    space: viewerSpace,
-  });
-
-  modelPath = "./assets/duck/scene.gltf"; // default Model
   geometry = new THREE.BoxGeometry(size, size, size); // default Shape
+  loadModel(); // default model
 
   console.log("Session STARTED");
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.update();
 
   controller = XR.getController(0);
   scene.add(controller);
 
-  reticle = new THREE.Mesh(
-    new THREE.RingGeometry(0.15, 0.2, 32),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
-  );
-  reticle.rotation.x = -Math.PI / 2;
-  reticle.visible = reticle.matrixAutoUpdate = false;
-  scene.add(reticle);
+  controller.addEventListener("select", async () => {
+    if (isModel && modelReady) {
+      console.log("placing Model : START");
 
-  renderer.setAnimationLoop((timestamp, frame) => {
-    if (!frame) return;
+      const clone = model.clone(); // Clone the loaded model
+      clone.position.copy(controller.position);
+      scene.add(clone);
 
-    if (isModel) {
-      const hitTestResults = frame.getHitTestResults(hitTestSource);
-      if (hitTestResults.length > 0) {
-        const hit = hitTestResults[0];
-        const hitPose = hit.getPose(referenceSpace);
-        reticle.visible = true;
-        reticle.matrix.fromArray(hitPose.transform.matrix);
-        console.log("place Model");
-      }
+      console.log("placing Model : END");
     } else {
-      reticle.visible = false;
-      console.log("place Shape");
+      console.log("placing Shape : START");
+
+      material = new THREE.MeshBasicMaterial({
+        color: 0xffffff * Math.random(),
+      });
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.position.copy(controller.position);
+      scene.add(mesh);
+
+      console.log("placing Shape : END");
     }
+  });
 
-    controller.addEventListener("select", async () => {
-      if (isModel) {
-        console.log("placing Model : START");
-        
-        const gltf = await gltfLoader.loadAsync(modelPath);
-        model = gltf.scene;
-        model.scale.set(modelSize, modelSize, modelSize);
-        model.castShadow = true;
-        scene.add(model);
-
-        console.log("placing Model : END");
-        
-        // modelAnims = gltf.animations;
-        // console.log("Animation : " + modelAnims);
-        // const mixer = new THREE.AnimationMixer(model);
-        // const action = mixer.clipAction(modelAnims[0]);
-        // action.play();
-      } else {
-        console.log("placing Shape : START");
-
-        material = new THREE.MeshBasicMaterial({
-          color: 0xffffff * Math.random(),
-        });
-        mesh = new THREE.Mesh(geometry, material);
-        mesh.position.copy(controller.position);
-        scene.add(mesh);
-
-        console.log("placing Shape : END");
-      }
-    });
-
+  renderer.setAnimationLoop(() => {
+    controls.update();
     renderer.render(scene, camera);
   });
 }
@@ -274,6 +263,7 @@ function checkPin(pin, count) {
       isModel = true;
       modelSize = 0.25;
       modelPath = `./assets/woman/beautiful_0${count}.glb`;
+      loadModel();
     } else {
       input.value = "";
       alert("Incorrect PIN ! Try again...");
