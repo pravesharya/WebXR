@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "GLTFLoader";
-import { OrbitControls } from 'OrbitControls';
+import { OrbitControls } from "OrbitControls";
 // import { CSS3DRenderer } from "CSS3DRenderer";
 // console.log(CSS3DRenderer);
 
@@ -21,19 +21,25 @@ const btnM5 = document.querySelector("#m5");
 const formDiv = document.querySelector("#formDiv");
 
 let webXrSupported, session, sessionActive;
-let renderer, camera, scene, XR;
-let size, geometry, material, mesh, mesheListVisible;
-let gltfLoader, modelPath, model, modelSize, modelAnims;
-let controller, isModel, modelReady;
-let pinCorrect, formExist, form, input, actions, submit, close;
+webXrSupported = sessionActive = false;
 
-sessionActive = webXrSupported = isModel = false;
-mesheListVisible = formExist = pinCorrect = false;
-size = modelSize = 0.0025;
+let renderer, camera, scene, XR, controller, orbitControls;
+
+let size, geometry, material, mesh, mesheListVisible;
+mesheListVisible = false;
+
+let gltfLoader, modelPath, model, modelSize, modelAnims;
+let isModel, modelReady;
+isModel = modelReady = false;
+
+let formExist, form, input, actions, submit, close;
+formExist = false;
+
+size = 1;
+modelSize = 0.025;
 
 gltfLoader = new GLTFLoader();
 modelPath = "./assets/duck/scene.gltf"; // default Model
-isModel = modelReady = false;
 
 async function loadModel() {
   try {
@@ -83,6 +89,9 @@ async function setupScene() {
   lightD.position.set(0, 0.5, 0.5).normalize();
   scene.add(lightD);
 
+  orbitControls = new OrbitControls(camera, renderer.domElement);
+  orbitControls.update();
+
   console.log("scene setup successfully");
 }
 setupScene();
@@ -103,12 +112,8 @@ async function startSession() {
 
   console.log("Session STARTED");
 
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.update();
-
   controller = XR.getController(0);
   scene.add(controller);
-
   controller.addEventListener("select", async () => {
     if (isModel && modelReady) {
       console.log("placing Model : START");
@@ -133,7 +138,7 @@ async function startSession() {
   });
 
   renderer.setAnimationLoop(() => {
-    controls.update();
+    orbitControls.update();
     renderer.render(scene, camera);
   });
 }
@@ -206,7 +211,7 @@ btnM2.addEventListener("click", () => {
 btnM3.addEventListener("click", () => {
   console.log("Duck");
   isModel = true;
-  modelSize = 0.05;
+  // modelSize = 0.025;
 });
 
 btnM4.addEventListener("click", () => {
@@ -261,7 +266,7 @@ function checkPin(pin, count) {
       formExist = false;
 
       isModel = true;
-      modelSize = 0.25;
+      // modelSize = 0.25;
       modelPath = `./assets/woman/beautiful_0${count}.glb`;
       loadModel();
     } else {
@@ -276,3 +281,5 @@ function checkPin(pin, count) {
     formExist = false;
   });
 }
+
+// EOF
